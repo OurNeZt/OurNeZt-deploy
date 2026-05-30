@@ -1,0 +1,117 @@
+{{- if .Values.core.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ournezt.core.fullname" . }}
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-core
+spec:
+  replicas: {{ .Values.core.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ournezt.core.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ournezt.core.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if and .Values.postgres.enabled (eq (trim .Values.core.databaseURL) "") }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.auth.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "ournezt.postgres.fullname" .) .Values.postgres.auth.existingSecret }}
+                  key: {{ .Values.postgres.auth.passwordKey }}
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "ournezt.postgres.fullname" . }} -p {{ .Values.postgres.service.port }} -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+      {{- end }}
+      containers:
+        - name: core
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          env:
+            {{- if and .Values.postgres.enabled (eq (trim .Values.core.databaseURL) "") }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "ournezt.postgres.fullname" .) .Values.postgres.auth.existingSecret }}
+                  key: {{ .Values.postgres.auth.passwordKey }}
+            {{- end }}
+            - name: APP_ENV
+              value: {{ .Values.global.appEnv | quote }}
+            - name: GRPC_ADDR
+              value: {{ .Values.core.grpcAddr | quote }}
+            {{- if ne (trim .Values.core.databaseURL) "" }}
+            - name: DATABASE_URL
+              value: {{ .Values.core.databaseURL | quote }}
+            {{- else }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgres.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "ournezt.postgres.fullname" . }}:{{ .Values.postgres.service.port }}/{{ .Values.postgres.auth.database }}?sslmode=disable"
+            {{- end }}
+            - name: SESSION_TOKEN_BYTES
+              value: {{ .Values.core.sessionTokenBytes | quote }}
+            - name: SESSION_TTL
+              value: {{ .Values.core.sessionTTL | quote }}
+            - name: RUN_MIGRATIONS
+              value: {{ .Values.core.runMigrations | quote }}
+            {{- if .Values.core.bootstrap.enabled }}
+            - name: BOOTSTRAP_ADMIN_EMAIL
+              value: {{ .Values.core.bootstrap.adminEmail | quote }}
+            - name: BOOTSTRAP_ADMIN_DISPLAY_NAME
+              value: {{ .Values.core.bootstrap.adminDisplayName | quote }}
+            - name: BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-bootstrap" (include "ournezt.core.fullname" .)) .Values.core.bootstrap.existingSecret }}
+                  key: {{ .Values.core.bootstrap.passwordKey }}
+            {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

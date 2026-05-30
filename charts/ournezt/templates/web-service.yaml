@@ -1,0 +1,18 @@
+{{- if .Values.web.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ournezt.web.fullname" . }}
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-web
+spec:
+  type: {{ .Values.web.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.web.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "ournezt.web.selectorLabels" . | nindent 4 }}
+{{- end }}

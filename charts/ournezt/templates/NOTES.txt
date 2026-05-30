@@ -1,0 +1,8 @@
+1. Web service:
+   kubectl get svc {{ include "ournezt.web.fullname" . }} -n {{ .Release.Namespace }}
+
+2. Core gRPC service (inside cluster):
+   {{ include "ournezt.core.fullname" . }}:{{ .Values.core.service.port }}
+
+3. PostgreSQL service (inside cluster):
+   {{ include "ournezt.postgres.fullname" . }}:{{ .Values.postgres.service.port }}

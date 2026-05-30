@@ -1,0 +1,18 @@
+{{- if .Values.core.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ournezt.core.fullname" . }}
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-core
+spec:
+  type: {{ .Values.core.service.type }}
+  ports:
+    - name: grpc
+      port: {{ .Values.core.service.port }}
+      targetPort: grpc
+      protocol: TCP
+  selector:
+    {{- include "ournezt.core.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,109 @@
+nameOverride: ""
+fullnameOverride: ""
+
+global:
+  appEnv: production
+
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 17-bookworm
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+  auth:
+    database: ournezt
+    username: ournezt
+    password: ournezt-change-me
+    existingSecret: ""
+    passwordKey: POSTGRES_PASSWORD
+  persistence:
+    enabled: true
+    storageClassName: ""
+    size: 20Gi
+    accessModes:
+      - ReadWriteOnce
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+core:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ournezt/ournezt-core
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 50051
+  grpcAddr: ":50051"
+  databaseURL: ""
+  sessionTokenBytes: 32
+  sessionTTL: 24h
+  runMigrations: "true"
+  bootstrap:
+    enabled: false
+    adminEmail: ""
+    adminDisplayName: "Bootstrap Admin"
+    adminPassword: ""
+    existingSecret: ""
+    passwordKey: BOOTSTRAP_ADMIN_PASSWORD
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+web:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ournezt/ournezt-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  webAddr: ":8080"
+  requestTimeout: 5s
+  sessionCookieName: ournezt_session
+  sessionCookieMaxAge: 24h
+  sessionCookieSecure: "true"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: ournezt.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+
+podSecurityContext:
+  fsGroup: 999
+
+securityContext:
+  runAsUser: 10001
+  runAsGroup: 10001
+  runAsNonRoot: true
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

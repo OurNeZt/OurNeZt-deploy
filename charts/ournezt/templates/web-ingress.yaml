@@ -1,0 +1,36 @@
+{{- if and .Values.web.enabled .Values.web.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ournezt.web.fullname" . }}
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-web
+  {{- with .Values.web.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.web.ingress.className }}
+  ingressClassName: {{ .Values.web.ingress.className }}
+  {{- end }}
+  rules:
+    {{- range .Values.web.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "ournezt.web.fullname" $ }}
+                port:
+                  number: {{ $.Values.web.service.port }}
+          {{- end }}
+    {{- end }}
+  {{- with .Values.web.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

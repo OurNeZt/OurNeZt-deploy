@@ -1,0 +1,74 @@
+{{- if .Values.web.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ournezt.web.fullname" . }}
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-web
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ournezt.web.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ournezt.web.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: APP_ENV
+              value: {{ .Values.global.appEnv | quote }}
+            - name: WEB_ADDR
+              value: {{ .Values.web.webAddr | quote }}
+            - name: CORE_GRPC_ADDR
+              value: "{{ include "ournezt.core.fullname" . }}:{{ .Values.core.service.port }}"
+            - name: SESSION_COOKIE_NAME
+              value: {{ .Values.web.sessionCookieName | quote }}
+            - name: SESSION_COOKIE_MAX_AGE
+              value: {{ .Values.web.sessionCookieMaxAge | quote }}
+            - name: SESSION_COOKIE_SECURE
+              value: {{ .Values.web.sessionCookieSecure | quote }}
+            - name: REQUEST_TIMEOUT
+              value: {{ .Values.web.requestTimeout | quote }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
