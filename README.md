@@ -1,100 +1,145 @@
 # OurNeZt Deploy
 
-Deployment assets for OurNeZt infrastructure.
+Deployment assets for the OurNeZt stack:
+- `OurNeZt-core` (gRPC backend)
+- `OurNeZt-web` (Gin web app)
+- PostgreSQL
 
-Current scope:
-- PostgreSQL for local development (`docker compose`)
-- PostgreSQL for production Kubernetes (`helm`)
-
-`OurNeZt-deploy` is a solid name and aligns with your Phase 1 plan.  
-If you ever want a broader infra name later, `OurNeZt-infra` is the natural alternative.
+This repo now supports:
+- Local development with Docker Compose
+- Kubernetes deployment with one unified Helm chart (`charts/ournezt`)
 
 ## Structure
 
 ```text
 .
-├── .env.example
-├── docker-compose.yml
-└── charts
-    └── ournezt-postgres
+|-- .env.example
+|-- docker-compose.yml
+`-- charts
+    `-- ournezt
 ```
 
-## Local Dev (Docker Compose)
+`charts/ournezt` is the chart for deploying the full stack.
 
-1. Create env file:
+## Local Development (Docker Compose)
+
+The compose file builds app images from sibling repos:
+- `../OurNeZt-core`
+- `../OurNeZt-web`
+
+### 1) Configure env
 
 ```powershell
 Set-Location E:\OurNeZt\02-Apps\OurNeZt-deploy
 Copy-Item .env.example .env
 ```
 
-2. Start PostgreSQL:
+### 2) Start full stack
 
 ```powershell
-docker compose up -d postgres
+docker compose up -d --build
 ```
 
-3. Verify:
+### 3) Check logs
 
 ```powershell
-docker compose ps
-docker compose logs -f postgres
+docker compose logs -f postgres core web
 ```
 
-4. Stop:
+### 4) Access app
+
+- Web: `http://localhost:8080`
+- Core gRPC: `localhost:50051`
+- Postgres: `localhost:5432`
+
+### 5) Stop
 
 ```powershell
 docker compose down
 ```
 
-## Production (Helm)
+## Kubernetes (Unified Helm Chart)
 
-### 1) Create a values file for prod secrets and storage
+Main chart: `charts/ournezt`
+
+### 1) Create prod values
 
 Example `values-prod.yaml`:
 
 ```yaml
+global:
+  appEnv: production
+
 postgres:
-  database: ournezt
-  username: ournezt
-  password: "replace-with-strong-password"
+  auth:
+    database: ournezt
+    username: ournezt
+    password: "replace-with-strong-password"
+  persistence:
+    enabled: true
+    storageClassName: "standard"
+    size: 50Gi
 
-persistence:
-  enabled: true
-  storageClassName: "standard"
-  size: 50Gi
+core:
+  image:
+    repository: ghcr.io/<org>/ournezt-core
+    tag: v0.1.0
+  runMigrations: "true"
+  bootstrap:
+    enabled: false
 
-resources:
-  requests:
-    cpu: 500m
-    memory: 1Gi
-  limits:
-    cpu: 2
-    memory: 2Gi
+web:
+  image:
+    repository: ghcr.io/<org>/ournezt-web
+    tag: v0.1.0
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: app.example.com
+        paths:
+          - path: /
+            pathType: Prefix
 ```
 
 ### 2) Install / upgrade
 
 ```bash
-helm upgrade --install ournezt-postgres ./charts/ournezt-postgres \
+helm upgrade --install ournezt ./charts/ournezt \
   --namespace ournezt \
   --create-namespace \
   -f values-prod.yaml
 ```
 
-### 3) Recommended secret approach (instead of plaintext in values)
+### 3) Optional secrets pattern
 
-Use a pre-created Kubernetes Secret and reference it:
+For postgres password, use a pre-created secret:
 
 ```yaml
 postgres:
-  existingSecret: ournezt-postgres-secret
-  passwordKey: POSTGRES_PASSWORD
+  auth:
+    existingSecret: ournezt-postgres-secret
+    passwordKey: POSTGRES_PASSWORD
 ```
-
-Then create the secret:
 
 ```bash
 kubectl -n ournezt create secret generic ournezt-postgres-secret \
   --from-literal=POSTGRES_PASSWORD='<strong-password>'
+```
+
+For bootstrap admin password:
+
+```yaml
+core:
+  bootstrap:
+    enabled: true
+    adminEmail: admin@example.com
+    adminDisplayName: Admin
+    existingSecret: ournezt-core-bootstrap
+    passwordKey: BOOTSTRAP_ADMIN_PASSWORD
+```
+
+```bash
+kubectl -n ournezt create secret generic ournezt-core-bootstrap \
+  --from-literal=BOOTSTRAP_ADMIN_PASSWORD='<strong-password>'
 ```
