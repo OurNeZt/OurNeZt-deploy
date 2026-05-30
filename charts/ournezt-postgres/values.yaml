@@ -1,0 +1,47 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: 17-bookworm
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5432
+
+postgres:
+  database: ournezt
+  username: ournezt
+  password: ournezt-change-me
+  existingSecret: ""
+  passwordKey: POSTGRES_PASSWORD
+
+persistence:
+  enabled: true
+  storageClassName: ""
+  size: 20Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+podSecurityContext:
+  fsGroup: 999
+
+securityContext:
+  runAsUser: 999
+  runAsGroup: 999
+  runAsNonRoot: true
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
