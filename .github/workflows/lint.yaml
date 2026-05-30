@@ -32,6 +32,6 @@ jobs:
 
       - name: Run yamllint
         run: |
-          yamllint .github/workflows docker-compose.yml \
+          yamllint -c .yamllint .github/workflows docker-compose.yml \
             charts/ournezt/Chart.yaml \
             charts/ournezt/values.yaml
