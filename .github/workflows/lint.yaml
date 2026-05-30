@@ -31,4 +31,7 @@ jobs:
         run: pip install yamllint
 
       - name: Run yamllint
-        run: yamllint .github/workflows charts/ournezt-postgres docker-compose.yml
+        run: |
+          yamllint .github/workflows docker-compose.yml \
+            charts/ournezt/Chart.yaml \
+            charts/ournezt/values.yaml

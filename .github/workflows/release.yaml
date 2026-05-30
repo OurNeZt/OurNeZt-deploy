@@ -171,15 +171,15 @@ jobs:
           version: v3.16.2
 
       - name: Lint chart
-        run: helm lint ./charts/ournezt-postgres
+        run: helm lint ./charts/ournezt
 
       - name: Render chart
-        run: helm template ournezt-postgres ./charts/ournezt-postgres > /dev/null
+        run: helm template ournezt ./charts/ournezt > /dev/null
 
       - name: Package chart
         run: |
           mkdir -p dist
-          helm package ./charts/ournezt-postgres --destination dist
+          helm package ./charts/ournezt --destination dist
 
       - name: Create GitHub Release
         if: steps.releasecheck.outputs.exists != 'true'

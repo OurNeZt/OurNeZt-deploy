@@ -26,7 +26,7 @@ jobs:
           version: v3.16.2
 
       - name: Helm lint
-        run: helm lint ./charts/ournezt-postgres
+        run: helm lint ./charts/ournezt
 
       - name: Helm template render
-        run: helm template ournezt-postgres ./charts/ournezt-postgres > /dev/null
+        run: helm template ournezt ./charts/ournezt > /dev/null
