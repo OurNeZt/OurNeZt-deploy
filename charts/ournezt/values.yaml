@@ -1,9 +1,20 @@
+# -----------------------------------------------------------------------------
+# Chart naming
+# -----------------------------------------------------------------------------
+# Optional release name overrides. Leave empty for Helm defaults.
 nameOverride: ""
 fullnameOverride: ""
 
+# -----------------------------------------------------------------------------
+# Global settings applied across services
+# -----------------------------------------------------------------------------
 global:
+  # Runtime profile used by core/web containers (development|staging|production)
   appEnv: production
 
+# -----------------------------------------------------------------------------
+# PostgreSQL (stateful)
+# -----------------------------------------------------------------------------
 postgres:
   enabled: true
   image:
@@ -11,16 +22,22 @@ postgres:
     tag: 17-bookworm
     pullPolicy: IfNotPresent
   service:
+    # Use ClusterIP for in-cluster access. Expose externally via a dedicated DB
+    # access pattern only if absolutely required.
     type: ClusterIP
     port: 5432
   auth:
+    # In production, prefer existingSecret over inline password.
     database: ournezt
     username: ournezt
     password: ournezt-change-me
+    # If set, chart will read DB password from this secret instead of .auth.password.
     existingSecret: ""
+    # Key name inside the referenced secret.
     passwordKey: POSTGRES_PASSWORD
   persistence:
     enabled: true
+    # Set explicitly in production clusters to match your storage class policy.
     storageClassName: ""
     size: 20Gi
     accessModes:
@@ -33,8 +50,12 @@ postgres:
       cpu: 1
       memory: 1Gi
 
+# -----------------------------------------------------------------------------
+# OurNeZt Core (gRPC API)
+# -----------------------------------------------------------------------------
 core:
   enabled: true
+  # Increase for higher availability after validating DB capacity and migrations.
   replicaCount: 1
   image:
     repository: ghcr.io/ournezt/ournezt-core
@@ -44,15 +65,22 @@ core:
     type: ClusterIP
     port: 50051
   grpcAddr: ":50051"
+  # Optional full override.
+  # Leave empty to auto-build DATABASE_URL from postgres.* values above.
+  # Set this when using an external/managed PostgreSQL instance.
   databaseURL: ""
   sessionTokenBytes: 32
   sessionTTL: 24h
+  # Core container entrypoint migration switch.
+  # Keep true for simple environments; disable if you run migrations separately.
   runMigrations: "true"
   bootstrap:
+    # One-time admin bootstrap. Keep disabled after initial setup.
     enabled: false
     adminEmail: ""
     adminDisplayName: "Bootstrap Admin"
     adminPassword: ""
+    # If set, bootstrap password is read from this secret.
     existingSecret: ""
     passwordKey: BOOTSTRAP_ADMIN_PASSWORD
   resources:
@@ -63,6 +91,9 @@ core:
       cpu: 1
       memory: 1Gi
 
+# -----------------------------------------------------------------------------
+# OurNeZt Web (HTTP)
+# -----------------------------------------------------------------------------
 web:
   enabled: true
   replicaCount: 1
@@ -77,6 +108,7 @@ web:
   requestTimeout: 5s
   sessionCookieName: ournezt_session
   sessionCookieMaxAge: 24h
+  # Keep true in production (TLS required end-to-end for secure cookies).
   sessionCookieSecure: "true"
   resources:
     requests:
@@ -86,7 +118,9 @@ web:
       cpu: 500m
       memory: 512Mi
   ingress:
+    # Enable and configure for public HTTP/S access.
     enabled: false
+    # Example: nginx, traefik, alb
     className: ""
     annotations: {}
     hosts:
@@ -94,8 +128,16 @@ web:
         paths:
           - path: /
             pathType: Prefix
+    # Example:
+    # tls:
+    #   - secretName: ournezt-web-tls
+    #     hosts:
+    #       - app.example.com
     tls: []
 
+# -----------------------------------------------------------------------------
+# Pod/container security defaults
+# -----------------------------------------------------------------------------
 podSecurityContext:
   fsGroup: 999
 
@@ -104,6 +146,9 @@ securityContext:
   runAsGroup: 10001
   runAsNonRoot: true
 
+# -----------------------------------------------------------------------------
+# Optional scheduling constraints
+# -----------------------------------------------------------------------------
 nodeSelector: {}
 tolerations: []
 affinity: {}
