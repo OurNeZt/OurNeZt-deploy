@@ -1,0 +1,16 @@
+extends: default
+
+rules:
+  # GitHub Actions/Helm/Compose files in this repo do not require '---'.
+  document-start: disable
+
+  # Allow standard GitHub Actions syntax where 'on' is a mapping key.
+  truthy:
+    check-keys: false
+
+  # Keep readability guardrails without failing practical workflow commands.
+  line-length:
+    max: 180
+    level: error
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
