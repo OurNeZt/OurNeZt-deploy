@@ -1,6 +1,0 @@
-1. PostgreSQL service endpoint (inside cluster):
-   {{ include "ournezt-postgres.fullname" . }}:{{ .Values.service.port }}
-
-2. Test connection from a temporary pod:
-   kubectl run pg-client --rm -it --restart=Never --image=postgres:17-bookworm -- \
-     psql -h {{ include "ournezt-postgres.fullname" . }} -U {{ .Values.postgres.username }} -d {{ .Values.postgres.database }}
