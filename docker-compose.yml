@@ -20,5 +20,47 @@ services:
       retries: 10
       start_period: 10s
 
+  core:
+    build:
+      context: ../OurNeZt-core
+      dockerfile: Dockerfile
+    container_name: ournezt-core
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${CORE_APP_ENV:-development}
+      GRPC_ADDR: :50051
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      SESSION_TOKEN_BYTES: ${CORE_SESSION_TOKEN_BYTES:-32}
+      SESSION_TTL: ${CORE_SESSION_TTL:-24h}
+      RUN_MIGRATIONS: ${CORE_RUN_MIGRATIONS:-true}
+      BOOTSTRAP_ADMIN_EMAIL: ${CORE_BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${CORE_BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_ADMIN_DISPLAY_NAME: ${CORE_BOOTSTRAP_ADMIN_DISPLAY_NAME:-Admin}
+    ports:
+      - "${CORE_GRPC_PORT:-50051}:50051"
+
+  web:
+    build:
+      context: ../OurNeZt-web
+      dockerfile: Dockerfile
+    container_name: ournezt-web
+    restart: unless-stopped
+    depends_on:
+      core:
+        condition: service_started
+    environment:
+      APP_ENV: ${WEB_APP_ENV:-development}
+      WEB_ADDR: :8080
+      CORE_GRPC_ADDR: core:50051
+      SESSION_COOKIE_NAME: ${WEB_SESSION_COOKIE_NAME:-ournezt_session}
+      SESSION_COOKIE_MAX_AGE: ${WEB_SESSION_COOKIE_MAX_AGE:-24h}
+      SESSION_COOKIE_SECURE: ${WEB_SESSION_COOKIE_SECURE:-false}
+      REQUEST_TIMEOUT: ${WEB_REQUEST_TIMEOUT:-5s}
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+
 volumes:
   postgres_data:
