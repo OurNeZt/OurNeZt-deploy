@@ -179,9 +179,13 @@ WEB_SESSION_COOKIE_NAME=ournezt_session
 WEB_SESSION_COOKIE_MAX_AGE=24h
 WEB_SESSION_COOKIE_SECURE=false
 WEB_REQUEST_TIMEOUT=5s
+WEB_MAINTENANCE_NOTICE_ENABLED=false
+WEB_MAINTENANCE_NOTICE_LEVEL=warning
 ```
 
 For production, prefer Kubernetes Secrets instead of inline passwords in Helm values.
+
+Maintenance notices can be configured in Helm under `web.maintenanceNotice`. The chart mounts the notice as a ConfigMap-backed JSON file, so banner copy can be updated with `kubectl edit configmap <release>-web-maintenance-notice` without rebuilding the web image.
 
 ---
 
