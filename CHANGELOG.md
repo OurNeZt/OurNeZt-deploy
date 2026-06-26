@@ -9,16 +9,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [v1.1.0] - 2026-06-26
 
 ### Added
-- (fill)
+- Added Helm ConfigMap support for the web maintenance notice.
+- Added `web.maintenanceNotice` chart values for planned downtime banner configuration.
+- Added `MAINTENANCE_NOTICE_FILE` wiring to the web deployment.
+- Added Docker Compose environment variables for local maintenance notice testing.
+- Added optional core gRPC TLS Helm values and secret mount support.
+- Added optional web-to-core gRPC TLS chart values for future secure internal service communication.
+- Added `.clineignore` for local agent/tooling hygiene.
 
 ### Changed
-- (fill)
+- Bumped unified Helm chart version from `0.1.0` to `0.2.0`.
+- Updated deployment README with maintenance notice configuration notes.
 
 ### Fixed
-- (fill)
+- No fixes in this release.
 
 ### Removed
-- (fill)
+- No removals in this release.
 
 ## [v1.0.1] - 2026-05-30
 
