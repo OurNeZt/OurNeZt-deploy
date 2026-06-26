@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - (fill)
 
+## [v1.0.1] - 2026-05-30
+
+### Added
+- Added a license file.
+
+### Changed
+- No changes in this release.
+
+### Fixed
+- No fixes in this release.
+
+### Removed
+- No removals in this release.
+
 ## [v1.0.0] - 2026-05-30
 
 ### Added
