@@ -39,6 +39,8 @@ spec:
               value: {{ .Values.web.sessionCookieSecure | quote }}
             - name: REQUEST_TIMEOUT
               value: {{ .Values.web.requestTimeout | quote }}
+            - name: MAINTENANCE_NOTICE_FILE
+              value: "{{ .Values.web.maintenanceNotice.mountPath }}/{{ .Values.web.maintenanceNotice.fileName }}"
           livenessProbe:
             httpGet:
               path: /
@@ -59,6 +61,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts:
+            - name: maintenance-notice
+              mountPath: {{ .Values.web.maintenanceNotice.mountPath | quote }}
+              readOnly: true
+      volumes:
+        - name: maintenance-notice
+          configMap:
+            name: {{ include "ournezt.web.fullname" . }}-maintenance-notice
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

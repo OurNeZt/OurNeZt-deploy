@@ -1,0 +1,12 @@
+{{- if .Values.web.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ournezt.web.fullname" . }}-maintenance-notice
+  labels:
+    {{- include "ournezt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "ournezt.name" . }}-web
+data:
+  {{ .Values.web.maintenanceNotice.fileName }}: |
+{{ dict "enabled" .Values.web.maintenanceNotice.enabled "level" .Values.web.maintenanceNotice.level "title" .Values.web.maintenanceNotice.title "message" .Values.web.maintenanceNotice.message "starts_at" .Values.web.maintenanceNotice.startsAt "ends_at" .Values.web.maintenanceNotice.endsAt | toPrettyJson | indent 4 }}
+{{- end }}
