@@ -60,6 +60,12 @@ spec:
               value: {{ .Values.global.appEnv | quote }}
             - name: GRPC_ADDR
               value: {{ .Values.core.grpcAddr | quote }}
+            {{- if .Values.core.tls.enabled }}
+            - name: GRPC_TLS_CERT_FILE
+              value: {{ printf "%s/%s" .Values.core.tls.mountPath .Values.core.tls.certFileName | quote }}
+            - name: GRPC_TLS_KEY_FILE
+              value: {{ printf "%s/%s" .Values.core.tls.mountPath .Values.core.tls.keyFileName | quote }}
+            {{- end }}
             {{- if ne (trim .Values.core.databaseURL) "" }}
             - name: DATABASE_URL
               value: {{ .Values.core.databaseURL | quote }}
@@ -84,6 +90,12 @@ spec:
                   name: {{ default (printf "%s-bootstrap" (include "ournezt.core.fullname" .)) .Values.core.bootstrap.existingSecret }}
                   key: {{ .Values.core.bootstrap.passwordKey }}
             {{- end }}
+          {{- if .Values.core.tls.enabled }}
+          volumeMounts:
+            - name: core-grpc-tls
+              mountPath: {{ .Values.core.tls.mountPath | quote }}
+              readOnly: true
+          {{- end }}
           livenessProbe:
             tcpSocket:
               port: grpc
@@ -102,6 +114,17 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.core.resources | nindent 12 }}
+      {{- if .Values.core.tls.enabled }}
+      volumes:
+        - name: core-grpc-tls
+          secret:
+            secretName: {{ required "core.tls.existingSecret is required when core.tls.enabled=true" .Values.core.tls.existingSecret }}
+            items:
+              - key: {{ .Values.core.tls.certKey | quote }}
+                path: {{ .Values.core.tls.certFileName | quote }}
+              - key: {{ .Values.core.tls.keyKey | quote }}
+                path: {{ .Values.core.tls.keyFileName | quote }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

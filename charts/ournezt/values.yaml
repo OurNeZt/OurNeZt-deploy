@@ -65,6 +65,18 @@ core:
     type: ClusterIP
     port: 50051
   grpcAddr: ":50051"
+  tls:
+    # Enables TLS for core gRPC listener (internal pod-to-pod encryption).
+    enabled: false
+    # Secret containing certificate and key for core gRPC server.
+    # Expected keys are tls.crt and tls.key by default.
+    existingSecret: ""
+    certKey: tls.crt
+    keyKey: tls.key
+    # Mount settings for certificate files.
+    mountPath: /etc/ournezt/core-tls
+    certFileName: tls.crt
+    keyFileName: tls.key
   # Optional full override.
   # Leave empty to auto-build DATABASE_URL from postgres.* values above.
   # Set this when using an external/managed PostgreSQL instance.
@@ -106,10 +118,34 @@ web:
     port: 8080
   webAddr: ":8080"
   requestTimeout: 5s
+  coreGrpcTLS:
+    # Enables TLS for web -> core gRPC connection.
+    enabled: false
+    # Optional CA bundle secret for verifying core certificate.
+    # If empty, system trust store is used.
+    caSecret: ""
+    caKey: ca.crt
+    caMountPath: /etc/ournezt/core-ca
+    caFileName: ca.crt
+    # Optional override for TLS server name verification.
+    serverName: ""
+    # Keep false in production.
+    insecureSkipVerify: "false"
   sessionCookieName: ournezt_session
   sessionCookieMaxAge: 24h
   # Keep true in production (TLS required end-to-end for secure cookies).
   sessionCookieSecure: "true"
+  maintenanceNotice:
+    # Mounted as a ConfigMap-backed JSON file and read by the web app on each page render.
+    # Edit the ConfigMap to update copy without rebuilding the image.
+    enabled: true
+    level: warning
+    title: Planned maintenance
+    message: OurNeZt may be unavailable on 28 Jun 2026, 12:00 AM to approximately 2:00 AM SGT while we migrate ingress traffic.
+    startsAt: 28 Jun 2026, 12:00 AM SGT
+    endsAt: 28 Jun 2026, approximately 2:00 AM SGT
+    mountPath: /etc/ournezt/maintenance-notice
+    fileName: notice.json
   resources:
     requests:
       cpu: 100m
