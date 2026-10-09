@@ -19,9 +19,7 @@ services:
       start_period: 10s
 
   core:
-    build:
-      context: ../OurNeZt-core
-      dockerfile: Dockerfile
+    image: ghcr.io/ournezt/ournezt-core:${CORE_IMAGE_TAG:-v1.6.0}
     container_name: ournezt-core
     restart: unless-stopped
     depends_on:
@@ -33,6 +31,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-ournezt}:${POSTGRES_PASSWORD:-ournezt}@postgres:5432/${POSTGRES_DB:-ournezt}?sslmode=disable
       SESSION_TOKEN_BYTES: ${CORE_SESSION_TOKEN_BYTES:-32}
       SESSION_TTL: ${CORE_SESSION_TTL:-24h}
+      AUTH_IP_LIMIT: ${CORE_AUTH_IP_LIMIT:-120}
+      AUTH_ACCOUNT_LIMIT: ${CORE_AUTH_ACCOUNT_LIMIT:-5}
+      AUTH_RATE_WINDOW: ${CORE_AUTH_RATE_WINDOW:-1m}
+      AUTH_MAX_CONCURRENT: ${CORE_AUTH_MAX_CONCURRENT:-2}
       RUN_MIGRATIONS: ${CORE_RUN_MIGRATIONS:-true}
       BOOTSTRAP_ADMIN_EMAIL: ${CORE_BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${CORE_BOOTSTRAP_ADMIN_PASSWORD:-}
@@ -41,9 +43,7 @@ services:
       - "${CORE_GRPC_PORT:-50051}:50051"
 
   web:
-    build:
-      context: ../OurNeZt-web
-      dockerfile: Dockerfile
+    image: ghcr.io/ournezt/ournezt-web:${WEB_IMAGE_TAG:-v1.4.0}
     container_name: ournezt-web
     restart: unless-stopped
     depends_on:
@@ -57,6 +57,11 @@ services:
       SESSION_COOKIE_MAX_AGE: ${WEB_SESSION_COOKIE_MAX_AGE:-24h}
       SESSION_COOKIE_SECURE: ${WEB_SESSION_COOKIE_SECURE:-false}
       REQUEST_TIMEOUT: ${WEB_REQUEST_TIMEOUT:-5s}
+      AUTH_IP_LIMIT: ${WEB_AUTH_IP_LIMIT:-30}
+      AUTH_ACCOUNT_LIMIT: ${WEB_AUTH_ACCOUNT_LIMIT:-5}
+      AUTH_RATE_WINDOW: ${WEB_AUTH_RATE_WINDOW:-1m}
+      AUTH_MAX_CONCURRENT: ${WEB_AUTH_MAX_CONCURRENT:-8}
+      WEB_TRUSTED_PROXIES: ${WEB_TRUSTED_PROXIES:-}
       MAINTENANCE_NOTICE_ENABLED: ${WEB_MAINTENANCE_NOTICE_ENABLED:-false}
       MAINTENANCE_NOTICE_LEVEL: ${WEB_MAINTENANCE_NOTICE_LEVEL:-warning}
       MAINTENANCE_NOTICE_TITLE: ${WEB_MAINTENANCE_NOTICE_TITLE:-}
