@@ -59,7 +59,7 @@ core:
   replicaCount: 1
   image:
     repository: ghcr.io/ournezt/ournezt-core
-    tag: latest
+    tag: v1.6.0
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -83,6 +83,12 @@ core:
   databaseURL: ""
   sessionTokenBytes: 32
   sessionTTL: 24h
+  # Per-process limits; Core sees Web as the transport peer.
+  authLimits:
+    ipLimit: 120
+    accountLimit: 5
+    rateWindow: 1m
+    maxConcurrent: 2
   # Core container entrypoint migration switch.
   # Keep true for simple environments; disable if you run migrations separately.
   runMigrations: "true"
@@ -111,13 +117,21 @@ web:
   replicaCount: 1
   image:
     repository: ghcr.io/ournezt/ournezt-web
-    tag: latest
+    tag: v1.4.0
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8080
   webAddr: ":8080"
   requestTimeout: 5s
+  # Per-process limits for browser authentication submissions.
+  authLimits:
+    ipLimit: 30
+    accountLimit: 5
+    rateWindow: 1m
+    maxConcurrent: 8
+  # Only list the actual ingress/reverse proxy IPs or CIDRs.
+  trustedProxies: []
   coreGrpcTLS:
     # Enables TLS for web -> core gRPC connection.
     enabled: false
