@@ -39,6 +39,16 @@ spec:
               value: {{ .Values.web.sessionCookieSecure | quote }}
             - name: REQUEST_TIMEOUT
               value: {{ .Values.web.requestTimeout | quote }}
+            - name: AUTH_IP_LIMIT
+              value: {{ .Values.web.authLimits.ipLimit | quote }}
+            - name: AUTH_ACCOUNT_LIMIT
+              value: {{ .Values.web.authLimits.accountLimit | quote }}
+            - name: AUTH_RATE_WINDOW
+              value: {{ .Values.web.authLimits.rateWindow | quote }}
+            - name: AUTH_MAX_CONCURRENT
+              value: {{ .Values.web.authLimits.maxConcurrent | quote }}
+            - name: WEB_TRUSTED_PROXIES
+              value: {{ join "," .Values.web.trustedProxies | quote }}
             - name: MAINTENANCE_NOTICE_FILE
               value: "{{ .Values.web.maintenanceNotice.mountPath }}/{{ .Values.web.maintenanceNotice.fileName }}"
           livenessProbe:

@@ -1,0 +1,15 @@
+# Build the sibling source repositories for local development.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+services:
+  core:
+    image: ournezt-core:local
+    pull_policy: build
+    build:
+      context: ../OurNeZt-core
+      dockerfile: Dockerfile
+  web:
+    image: ournezt-web:local
+    pull_policy: build
+    build:
+      context: ../OurNeZt-web
+      dockerfile: Dockerfile
