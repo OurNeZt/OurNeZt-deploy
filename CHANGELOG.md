@@ -9,16 +9,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [v1.2.0] - 2026-10-11
 
 ### Added
-- (fill)
+- Configurable Core and Web authentication IP limits, account limits, rate windows, and concurrency limits in Helm and Docker Compose.
+- Web trusted proxy configuration through Helm `web.trustedProxies` and Compose `WEB_TRUSTED_PROXIES`.
+- Compose image tag overrides through `CORE_IMAGE_TAG` and `WEB_IMAGE_TAG`.
+- `docker-compose.build.yml` for building sibling Core and Web source repositories with separate local image names.
+- CI configuration validation and YAML linting for the Compose build override.
 
 ### Changed
-- (fill)
+- Pinned default Helm and Compose images to Core `v1.6.0` and Web `v1.4.0`.
+- Docker Compose now uses released GHCR images by default; local source builds require the `docker-compose.build.yml` override.
+- Bumped the unified Helm chart from `0.2.0` to `0.3.0` and updated chart application metadata to identify both component versions.
+- Expanded `.env.example` with image tags, authentication limits, trusted proxy settings, and maintenance notice options.
+- Updated deployment documentation with released-image startup, local builds, authentication configuration, Core migrations 6 and 7, and Core-first upgrade steps.
 
 ### Fixed
-- (fill)
+- No fixes in this release.
 
 ### Removed
-- (fill)
+- No removals in this release.
 
 ## [v1.1.0] - 2026-06-26
 
