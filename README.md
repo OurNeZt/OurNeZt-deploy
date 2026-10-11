@@ -164,26 +164,48 @@ POSTGRES_USER=ournezt
 POSTGRES_PASSWORD=ournezt
 POSTGRES_PORT=5432
 
+CORE_IMAGE_TAG=v1.6.0
 CORE_APP_ENV=development
 CORE_GRPC_PORT=50051
 CORE_SESSION_TOKEN_BYTES=32
 CORE_SESSION_TTL=24h
+CORE_AUTH_IP_LIMIT=120
+CORE_AUTH_ACCOUNT_LIMIT=5
+CORE_AUTH_RATE_WINDOW=1m
+CORE_AUTH_MAX_CONCURRENT=2
 CORE_RUN_MIGRATIONS=true
 CORE_BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 CORE_BOOTSTRAP_ADMIN_PASSWORD=P@ssw0rd
 CORE_BOOTSTRAP_ADMIN_DISPLAY_NAME=Admin
 
+WEB_IMAGE_TAG=v1.4.0
 WEB_APP_ENV=development
 WEB_PORT=8080
 WEB_SESSION_COOKIE_NAME=ournezt_session
 WEB_SESSION_COOKIE_MAX_AGE=24h
 WEB_SESSION_COOKIE_SECURE=false
 WEB_REQUEST_TIMEOUT=5s
+WEB_AUTH_IP_LIMIT=30
+WEB_AUTH_ACCOUNT_LIMIT=5
+WEB_AUTH_RATE_WINDOW=1m
+WEB_AUTH_MAX_CONCURRENT=8
+# Comma-separated reverse proxy IPs or CIDRs; leave empty for direct access.
+WEB_TRUSTED_PROXIES=
 WEB_MAINTENANCE_NOTICE_ENABLED=false
 WEB_MAINTENANCE_NOTICE_LEVEL=warning
+WEB_MAINTENANCE_NOTICE_TITLE=
+WEB_MAINTENANCE_NOTICE_MESSAGE=
+WEB_MAINTENANCE_NOTICE_STARTS_AT=
+WEB_MAINTENANCE_NOTICE_ENDS_AT=
 ```
 
 For production, prefer Kubernetes Secrets instead of inline passwords in Helm values.
+
+Helm chart `0.3.0` pins Core `v1.6.0` and Web `v1.4.0`. Override `core.image.tag` and `web.image.tag` in your environment values when needed. Compose supports `CORE_IMAGE_TAG` and `WEB_IMAGE_TAG`.
+
+Authentication limits are configurable through `core.authLimits` and `web.authLimits` in Helm, or the `CORE_AUTH_*` and `WEB_AUTH_*` Compose variables. Defaults match the released applications: Core allows 120 requests per peer IP, 5 per account, and 2 concurrent password operations; Web allows 30 requests per browser IP, 5 per account, and 8 concurrent authentication requests. Both use a 1-minute window. Limits recover automatically and are independent per process/replica.
+
+Set Helm `web.trustedProxies` to a list of the actual ingress/reverse proxy IPs or CIDRs, or set Compose `WEB_TRUSTED_PROXIES` to a comma-separated list. Leave it empty for direct access. Without trusted proxy configuration, browsers behind the same proxy share its IP budget.
 
 Maintenance notices can be configured in Helm under `web.maintenanceNotice`. The chart mounts the notice as a ConfigMap-backed JSON file, so banner copy can be updated with `kubectl edit configmap <release>-web-maintenance-notice` without rebuilding the web image.
 
@@ -191,11 +213,20 @@ Maintenance notices can be configured in Helm under `web.maintenanceNotice`. The
 
 ## Running The Service
 
-Run the full local stack:
+Run the released stack (Core `v1.6.0`, Web `v1.4.0`):
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
+
+For local source development, clone `OurNeZt-core` and `OurNeZt-web` alongside this repository and use the build override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+The override uses local image names so source builds do not replace the released image tags.
 
 Check logs:
 
@@ -222,12 +253,21 @@ helm upgrade --install ournezt ./charts/ournezt \
 
 ---
 
+### Upgrading to Core v1.6.0 and Web v1.4.0
+
+Apply Core migrations `000006_housing_checklist` and `000007_housing_notes` before the updated application serves traffic. Automatic migrations remain enabled by default through `core.runMigrations` / `CORE_RUN_MIGRATIONS`; if disabled, run the migrations separately first.
+
+Upgrade Core first and confirm migration completion and service readiness before upgrading Web. With Compose, pull the images, update PostgreSQL/Core with `docker compose up -d postgres core`, check Core logs, then update Web with `docker compose up -d web`. With Helm, first upgrade using the new Core tag while keeping `web.image.tag` at the currently deployed version; after Core is ready, upgrade again with Web `v1.4.0`. A single Helm upgrade can roll out both deployments concurrently.
+
+Core now requires an authorized admin session for every `CreateUser` request. The Web admin provisioning flow remains compatible.
+
 ## Testing
 
 Validate compose config:
 
 ```bash
 docker compose --env-file .env.example -f docker-compose.yml config
+docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.build.yml config
 ```
 
 Lint and render Helm chart:
@@ -240,7 +280,7 @@ helm template ournezt ./charts/ournezt > /dev/null
 Run GitHub workflow lint checks locally (optional):
 
 ```bash
-yamllint .github/workflows docker-compose.yml charts/ournezt/Chart.yaml charts/ournezt/values.yaml
+yamllint -c .yamllint .github/workflows docker-compose.yml docker-compose.build.yml charts/ournezt/Chart.yaml charts/ournezt/values.yaml
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -252,7 +292,7 @@ yamllint .github/workflows docker-compose.yml charts/ournezt/Chart.yaml charts/o
 Start:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Stop:
@@ -329,6 +369,7 @@ For normal development:
 
    ```bash
    docker compose --env-file .env.example -f docker-compose.yml config
+   docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.build.yml config
    helm lint ./charts/ournezt
    helm template ournezt ./charts/ournezt > /dev/null
    ```

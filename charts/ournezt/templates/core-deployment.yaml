@@ -77,6 +77,14 @@ spec:
               value: {{ .Values.core.sessionTokenBytes | quote }}
             - name: SESSION_TTL
               value: {{ .Values.core.sessionTTL | quote }}
+            - name: AUTH_IP_LIMIT
+              value: {{ .Values.core.authLimits.ipLimit | quote }}
+            - name: AUTH_ACCOUNT_LIMIT
+              value: {{ .Values.core.authLimits.accountLimit | quote }}
+            - name: AUTH_RATE_WINDOW
+              value: {{ .Values.core.authLimits.rateWindow | quote }}
+            - name: AUTH_MAX_CONCURRENT
+              value: {{ .Values.core.authLimits.maxConcurrent | quote }}
             - name: RUN_MIGRATIONS
               value: {{ .Values.core.runMigrations | quote }}
             {{- if .Values.core.bootstrap.enabled }}
