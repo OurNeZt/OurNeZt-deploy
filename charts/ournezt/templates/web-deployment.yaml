@@ -13,6 +13,10 @@ spec:
       {{- include "ournezt.web.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if and .Values.web.csrf.authKey (not .Values.web.csrf.existingSecret) }}
+      annotations:
+        checksum/csrf: {{ .Values.web.csrf.authKey | sha256sum | quote }}
+      {{- end }}
       labels:
         {{- include "ournezt.web.selectorLabels" . | nindent 8 }}
     spec:
@@ -30,7 +34,28 @@ spec:
             - name: WEB_ADDR
               value: {{ .Values.web.webAddr | quote }}
             - name: CORE_GRPC_ADDR
-              value: "{{ include "ournezt.core.fullname" . }}:{{ .Values.core.service.port }}"
+              value: {{ default (printf "%s:%v" (include "ournezt.core.fullname" .) .Values.core.service.port) .Values.web.coreGrpcAddr | quote }}
+            - name: CORE_ALLOW_INSECURE
+              value: {{ .Values.web.coreAllowInsecure | quote }}
+            - name: CORE_GRPC_USE_TLS
+              value: {{ .Values.web.coreGrpcTLS.enabled | quote }}
+            - name: CORE_GRPC_TLS_INSECURE_SKIP_VERIFY
+              value: {{ .Values.web.coreGrpcTLS.insecureSkipVerify | quote }}
+            {{- if .Values.web.coreGrpcTLS.enabled }}
+            - name: CORE_GRPC_TLS_SERVER_NAME
+              value: {{ .Values.web.coreGrpcTLS.serverName | quote }}
+            {{- if .Values.web.coreGrpcTLS.caSecret }}
+            - name: CORE_GRPC_TLS_CA_FILE
+              value: {{ printf "%s/%s" .Values.web.coreGrpcTLS.caMountPath .Values.web.coreGrpcTLS.caFileName | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if or .Values.web.csrf.existingSecret .Values.web.csrf.authKey }}
+            - name: CSRF_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-csrf" (include "ournezt.web.fullname" .)) .Values.web.csrf.existingSecret }}
+                  key: {{ .Values.web.csrf.key }}
+            {{- end }}
             - name: SESSION_COOKIE_NAME
               value: {{ .Values.web.sessionCookieName | quote }}
             - name: SESSION_COOKIE_MAX_AGE
@@ -39,6 +64,18 @@ spec:
               value: {{ .Values.web.sessionCookieSecure | quote }}
             - name: REQUEST_TIMEOUT
               value: {{ .Values.web.requestTimeout | quote }}
+            - name: SHUTDOWN_TIMEOUT
+              value: {{ .Values.web.shutdownTimeout | quote }}
+            - name: WEB_READ_HEADER_TIMEOUT
+              value: {{ .Values.web.httpLimits.readHeaderTimeout | quote }}
+            - name: WEB_READ_TIMEOUT
+              value: {{ .Values.web.httpLimits.readTimeout | quote }}
+            - name: WEB_WRITE_TIMEOUT
+              value: {{ .Values.web.httpLimits.writeTimeout | quote }}
+            - name: WEB_IDLE_TIMEOUT
+              value: {{ .Values.web.httpLimits.idleTimeout | quote }}
+            - name: WEB_MAX_REQUEST_BODY_BYTES
+              value: {{ .Values.web.httpLimits.maxRequestBodyBytes | int64 | quote }}
             - name: AUTH_IP_LIMIT
               value: {{ .Values.web.authLimits.ipLimit | quote }}
             - name: AUTH_ACCOUNT_LIMIT
@@ -75,10 +112,23 @@ spec:
             - name: maintenance-notice
               mountPath: {{ .Values.web.maintenanceNotice.mountPath | quote }}
               readOnly: true
+            {{- if and .Values.web.coreGrpcTLS.enabled .Values.web.coreGrpcTLS.caSecret }}
+            - name: core-grpc-ca
+              mountPath: {{ .Values.web.coreGrpcTLS.caMountPath | quote }}
+              readOnly: true
+            {{- end }}
       volumes:
         - name: maintenance-notice
           configMap:
             name: {{ include "ournezt.web.fullname" . }}-maintenance-notice
+        {{- if and .Values.web.coreGrpcTLS.enabled .Values.web.coreGrpcTLS.caSecret }}
+        - name: core-grpc-ca
+          secret:
+            secretName: {{ .Values.web.coreGrpcTLS.caSecret | quote }}
+            items:
+              - key: {{ .Values.web.coreGrpcTLS.caKey | quote }}
+                path: {{ .Values.web.coreGrpcTLS.caFileName | quote }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

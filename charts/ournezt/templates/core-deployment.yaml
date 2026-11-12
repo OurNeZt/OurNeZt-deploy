@@ -60,6 +60,8 @@ spec:
               value: {{ .Values.global.appEnv | quote }}
             - name: GRPC_ADDR
               value: {{ .Values.core.grpcAddr | quote }}
+            - name: GRPC_ALLOW_INSECURE
+              value: {{ .Values.core.allowInsecure | quote }}
             {{- if .Values.core.tls.enabled }}
             - name: GRPC_TLS_CERT_FILE
               value: {{ printf "%s/%s" .Values.core.tls.mountPath .Values.core.tls.certFileName | quote }}
