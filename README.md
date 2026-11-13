@@ -122,7 +122,7 @@ Install the following tools:
 
 - Docker
 - Docker Compose v2
-- Helm 3
+- Helm 3 or 4 (CI validates 3.16.2 and 4.3.0)
 - kubectl (for Kubernetes deployments)
 
 Optional but recommended:

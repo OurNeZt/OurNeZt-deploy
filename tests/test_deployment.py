@@ -110,7 +110,6 @@ class HelmDeploymentTests(unittest.TestCase):
             ({"web": {"csrf": {"authKey": TEST_KEY}}}, "not both"),
             ({"core": {"tls": {"enabled": False}, "allowInsecure": True}}, "TLS settings must match"),
             ({"core": {"enabled": False}}, "web.coreGrpcAddr is required"),
-            ({"core": {"allowInsecure": "false"}}, "Invalid type"),
         ]
         for overrides, expected in cases:
             with self.subTest(expected=expected):
@@ -120,6 +119,16 @@ class HelmDeploymentTests(unittest.TestCase):
         result = render(DEVELOPMENT, {"web": {"coreGrpcTLS": {"caSecret": "unused-ca"}}})
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("TLS settings require", result.stderr)
+
+    def test_string_boolean_is_rejected_by_schema(self):
+        result = render(PRODUCTION, {"core": {"allowInsecure": "false"}})
+        self.assertNotEqual(result.returncode, 0)
+        # Helm 3 uses dotted paths; Helm 4 uses JSON pointers and different wording.
+        self.assertRegex(
+            result.stderr,
+            r"(?:core\.allowInsecure|/core/allowInsecure)[^\n]*"
+            r"(?:Expected: boolean, given: string|got string, want boolean)",
+        )
 
     def test_inline_csrf_key_is_stable_and_rotation_rolls_web(self):
         values = {"web": {"replicaCount": 2, "csrf": {"existingSecret": "", "authKey": TEST_KEY}}}
