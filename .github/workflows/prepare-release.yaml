@@ -73,7 +73,7 @@ jobs:
 
           while IFS= read -r file; do
             case "$file" in
-              charts/*|docker-compose.yml|.env.example|README.md|.github/*)
+              charts/*|docker-compose*.yml|examples/*|tests/*|.env.example|README.md|.github/*)
                 DEPLOY_CHANGED="true"
                 ;;
             esac

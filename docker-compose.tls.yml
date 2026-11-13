@@ -1,0 +1,30 @@
+# Verified Web-to-Core TLS. Prepare tls/core/tls.crt, tls/core/tls.key and
+# tls/ca/ca.crt first; the server certificate must include the DNS name "core".
+# Usage: docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d
+services:
+  core:
+    environment:
+      GRPC_TLS_CERT_FILE: /etc/ournezt/core-tls/tls.crt
+      GRPC_TLS_KEY_FILE: /etc/ournezt/core-tls/tls.key
+      GRPC_ALLOW_INSECURE: "false"
+    volumes:
+      - type: bind
+        source: ./tls/core
+        target: /etc/ournezt/core-tls
+        read_only: true
+        bind:
+          create_host_path: false
+  web:
+    environment:
+      CORE_GRPC_USE_TLS: "true"
+      CORE_ALLOW_INSECURE: "false"
+      CORE_GRPC_TLS_CA_FILE: /etc/ournezt/core-ca/ca.crt
+      CORE_GRPC_TLS_SERVER_NAME: core
+      CORE_GRPC_TLS_INSECURE_SKIP_VERIFY: "false"
+    volumes:
+      - type: bind
+        source: ./tls/ca
+        target: /etc/ournezt/core-ca
+        read_only: true
+        bind:
+          create_host_path: false

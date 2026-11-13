@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {"appEnv": {"type": "string"}}
+    },
+    "core": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "allowInsecure": {"type": "boolean"},
+        "tls": {
+          "type": "object",
+          "properties": {"enabled": {"type": "boolean"}}
+        }
+      }
+    },
+    "web": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "coreAllowInsecure": {"type": "boolean"},
+        "coreGrpcAddr": {"type": "string"},
+        "csrf": {
+          "type": "object",
+          "properties": {
+            "existingSecret": {"type": "string"},
+            "key": {"type": "string", "minLength": 1},
+            "authKey": {"type": "string"}
+          }
+        },
+        "coreGrpcTLS": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "insecureSkipVerify": {"enum": [true, false, "true", "false"]}
+          }
+        },
+        "httpLimits": {
+          "type": "object",
+          "properties": {
+            "maxRequestBodyBytes": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    }
+  }
+}

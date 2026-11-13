@@ -2,6 +2,6 @@ apiVersion: v2
 name: ournezt
 description: Unified OurNeZt chart for postgres, core, and web
 type: application
-version: 0.3.0
+version: 0.4.0
 # Component versions are pinned independently in values.yaml.
-appVersion: "core-v1.6.0_web-v1.4.0"
+appVersion: "core-v2.0.0_web-v2.0.0"
