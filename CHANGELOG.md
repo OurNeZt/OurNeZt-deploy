@@ -6,6 +6,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Persistent Web CSRF Secret references, optional chart-managed keys, and restart checksums for explicit key rotation.
+- Complete Web-to-Core TLS environment variables and CA mounts, explicit plaintext opt-ins, external Core addresses, and production configuration validation.
+- Configurable Web HTTP request limits and shutdown timeouts in Helm and Compose.
+- Verified Core TLS Compose override and production/development Helm example values.
+- Regression checks for rendered Helm resources, invalid production settings, Secret stability, TLS mounts, and Compose configuration.
+
+### Changed
+
+- Helm chart version is now `0.4.0`, with Core and Web images pinned to `v2.0.0`.
+- Production Helm installs require a CSRF secret and an explicit transport choice; development HTTP remains available through the development example.
+- Replaced the weak bootstrap password example with a policy-compatible placeholder and documented production secret setup.
+- Expanded upgrade guidance for migration `000008_resource_limits`, Core-first rollout, password/session changes, ingress HTTPS/HSTS, and the Web pagination limitation.
+- CI and release chart validation use explicit environment values; release PRs also run deployment CI.
+- Disabled the obsolete maintenance banner by default and removed its expired message.
+- Standardized text line endings for cross-platform YAML linting and restored earlier release changelog entries from stable.
+
+### Fixed
+
+- Web's existing Core TLS values now reach the container and mount the configured CA.
+- Prevented production startup failures caused by missing CSRF/transport wiring and avoided regenerating CSRF keys on Helm upgrades.
+- Rendered numeric request body limits as decimal integers rather than scientific notation.
+
 ## [v1.2.0] - 2026-10-11
 
 ### Added

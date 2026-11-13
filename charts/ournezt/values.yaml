@@ -59,12 +59,14 @@ core:
   replicaCount: 1
   image:
     repository: ghcr.io/ournezt/ournezt-core
-    tag: v1.6.0
+    tag: v2.0.0
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 50051
   grpcAddr: ":50051"
+  # Production requires TLS or this explicit opt-in for a trusted plaintext hop.
+  allowInsecure: false
   tls:
     # Enables TLS for core gRPC listener (internal pod-to-pod encryption).
     enabled: false
@@ -97,6 +99,7 @@ core:
     enabled: false
     adminEmail: ""
     adminDisplayName: "Bootstrap Admin"
+    # 15+ characters, at most 1024 UTF-8 bytes, no whitespace/common passwords.
     adminPassword: ""
     # If set, bootstrap password is read from this secret.
     existingSecret: ""
@@ -117,13 +120,31 @@ web:
   replicaCount: 1
   image:
     repository: ghcr.io/ournezt/ournezt-web
-    tag: v1.4.0
+    tag: v2.0.0
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8080
   webAddr: ":8080"
   requestTimeout: 5s
+  shutdownTimeout: 10s
+  httpLimits:
+    readHeaderTimeout: 10s
+    readTimeout: 15s
+    writeTimeout: 30s
+    idleTimeout: 60s
+    maxRequestBodyBytes: 1048576
+  csrf:
+    # Production requires a persistent 32-byte secret encoded as 64 hex characters.
+    # Prefer an existing Secret. Never generate a new key on every Helm upgrade.
+    existingSecret: ""
+    key: CSRF_AUTH_KEY
+    # Alternative: chart-managed Secret; do not commit real keys to source control.
+    authKey: ""
+  # Empty uses the chart's Core Service. Override for an external Core/TLS proxy.
+  coreGrpcAddr: ""
+  # Production plaintext requires an explicit opt-in in both Core and Web.
+  coreAllowInsecure: false
   # Per-process limits for browser authentication submissions.
   authLimits:
     ipLimit: 30
@@ -143,21 +164,21 @@ web:
     caFileName: ca.crt
     # Optional override for TLS server name verification.
     serverName: ""
-    # Keep false in production.
+    # Development only; the chart rejects true in production.
     insecureSkipVerify: "false"
   sessionCookieName: ournezt_session
   sessionCookieMaxAge: 24h
-  # Keep true in production (TLS required end-to-end for secure cookies).
+  # Keep true in production; browser-facing HTTPS can terminate at ingress.
   sessionCookieSecure: "true"
   maintenanceNotice:
     # Mounted as a ConfigMap-backed JSON file and read by the web app on each page render.
     # Edit the ConfigMap to update copy without rebuilding the image.
-    enabled: true
+    enabled: false
     level: warning
-    title: Planned maintenance
-    message: OurNeZt may be unavailable on 28 Jun 2026, 12:00 AM to approximately 2:00 AM SGT while we migrate ingress traffic.
-    startsAt: 28 Jun 2026, 12:00 AM SGT
-    endsAt: 28 Jun 2026, approximately 2:00 AM SGT
+    title: ""
+    message: ""
+    startsAt: ""
+    endsAt: ""
     mountPath: /etc/ournezt/maintenance-notice
     fileName: notice.json
   resources:

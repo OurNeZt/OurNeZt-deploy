@@ -185,10 +185,10 @@ jobs:
           version: v3.16.2
 
       - name: Lint chart
-        run: helm lint ./charts/ournezt
+        run: helm lint ./charts/ournezt -f examples/values-production.yaml
 
       - name: Render chart
-        run: helm template ournezt ./charts/ournezt > /dev/null
+        run: helm template ournezt ./charts/ournezt -f examples/values-production.yaml > /dev/null
 
       - name: Package chart
         run: |

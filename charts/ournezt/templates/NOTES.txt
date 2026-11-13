@@ -6,3 +6,15 @@
 
 3. PostgreSQL service (inside cluster):
    {{ include "ournezt.postgres.fullname" . }}:{{ .Values.postgres.service.port }}
+
+Core and Web default to v2.0.0. Upgrade Core and apply migration
+000008_resource_limits before rolling out Web. Confirm Core startup in its logs.
+
+Keep the CSRF key persistent and shared across Web replicas. Restart affected
+Deployments after externally managed CSRF/TLS/CA Secret changes.
+
+For browser HTTPS at ingress, configure HTTP-to-HTTPS redirects and HSTS there.
+Preserve Web's application security headers and the public Host.
+
+Core list APIs default to 50 records. Web 2.0 does not follow pagination tokens;
+update the client before deploying where affected collections exceed 50 records.

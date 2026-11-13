@@ -1,1 +1,7 @@
 .env
+.env.*
+!.env.example
+tls/
+secrets/
+values-private.yaml
+__pycache__/

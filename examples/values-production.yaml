@@ -1,0 +1,26 @@
+# Example: create these Secrets in the release namespace before installing.
+# Replace app.example.com and provide ingress-controller-specific HTTPS/HSTS policy.
+core:
+  tls:
+    enabled: true
+    existingSecret: ournezt-core-tls
+web:
+  csrf:
+    existingSecret: ournezt-web-csrf
+  coreGrpcTLS:
+    enabled: true
+    caSecret: ournezt-core-ca
+    # Certificate DNS SAN for the default release "ournezt" and chart name "ournezt".
+    # Change with fullnameOverride/release name, or use a matching serverName.
+    serverName: ournezt-ournezt-core
+  ingress:
+    enabled: true
+    hosts:
+      - host: app.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ournezt-web-tls
+        hosts:
+          - app.example.com

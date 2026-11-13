@@ -19,7 +19,7 @@ services:
       start_period: 10s
 
   core:
-    image: ghcr.io/ournezt/ournezt-core:${CORE_IMAGE_TAG:-v1.6.0}
+    image: ghcr.io/ournezt/ournezt-core:${CORE_IMAGE_TAG:-v2.0.0}
     container_name: ournezt-core
     restart: unless-stopped
     depends_on:
@@ -28,6 +28,9 @@ services:
     environment:
       APP_ENV: ${CORE_APP_ENV:-development}
       GRPC_ADDR: :50051
+      GRPC_TLS_CERT_FILE: ${CORE_GRPC_TLS_CERT_FILE:-}
+      GRPC_TLS_KEY_FILE: ${CORE_GRPC_TLS_KEY_FILE:-}
+      GRPC_ALLOW_INSECURE: ${CORE_GRPC_ALLOW_INSECURE:-false}
       DATABASE_URL: postgres://${POSTGRES_USER:-ournezt}:${POSTGRES_PASSWORD:-ournezt}@postgres:5432/${POSTGRES_DB:-ournezt}?sslmode=disable
       SESSION_TOKEN_BYTES: ${CORE_SESSION_TOKEN_BYTES:-32}
       SESSION_TTL: ${CORE_SESSION_TTL:-24h}
@@ -43,7 +46,7 @@ services:
       - "${CORE_GRPC_PORT:-50051}:50051"
 
   web:
-    image: ghcr.io/ournezt/ournezt-web:${WEB_IMAGE_TAG:-v1.4.0}
+    image: ghcr.io/ournezt/ournezt-web:${WEB_IMAGE_TAG:-v2.0.0}
     container_name: ournezt-web
     restart: unless-stopped
     depends_on:
@@ -53,10 +56,22 @@ services:
       APP_ENV: ${WEB_APP_ENV:-development}
       WEB_ADDR: :8080
       CORE_GRPC_ADDR: core:50051
+      CORE_GRPC_USE_TLS: ${WEB_CORE_GRPC_USE_TLS:-false}
+      CORE_ALLOW_INSECURE: ${WEB_CORE_ALLOW_INSECURE:-false}
+      CORE_GRPC_TLS_CA_FILE: ${WEB_CORE_GRPC_TLS_CA_FILE:-}
+      CORE_GRPC_TLS_SERVER_NAME: ${WEB_CORE_GRPC_TLS_SERVER_NAME:-}
+      CORE_GRPC_TLS_INSECURE_SKIP_VERIFY: ${WEB_CORE_GRPC_TLS_INSECURE_SKIP_VERIFY:-false}
       SESSION_COOKIE_NAME: ${WEB_SESSION_COOKIE_NAME:-ournezt_session}
       SESSION_COOKIE_MAX_AGE: ${WEB_SESSION_COOKIE_MAX_AGE:-24h}
       SESSION_COOKIE_SECURE: ${WEB_SESSION_COOKIE_SECURE:-false}
+      CSRF_AUTH_KEY: ${WEB_CSRF_AUTH_KEY:-}
       REQUEST_TIMEOUT: ${WEB_REQUEST_TIMEOUT:-5s}
+      SHUTDOWN_TIMEOUT: ${WEB_SHUTDOWN_TIMEOUT:-10s}
+      WEB_READ_HEADER_TIMEOUT: ${WEB_READ_HEADER_TIMEOUT:-10s}
+      WEB_READ_TIMEOUT: ${WEB_READ_TIMEOUT:-15s}
+      WEB_WRITE_TIMEOUT: ${WEB_WRITE_TIMEOUT:-30s}
+      WEB_IDLE_TIMEOUT: ${WEB_IDLE_TIMEOUT:-60s}
+      WEB_MAX_REQUEST_BODY_BYTES: ${WEB_MAX_REQUEST_BODY_BYTES:-1048576}
       AUTH_IP_LIMIT: ${WEB_AUTH_IP_LIMIT:-30}
       AUTH_ACCOUNT_LIMIT: ${WEB_AUTH_ACCOUNT_LIMIT:-5}
       AUTH_RATE_WINDOW: ${WEB_AUTH_RATE_WINDOW:-1m}

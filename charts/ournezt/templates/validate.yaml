@@ -1,0 +1,33 @@
+{{- $production := eq (lower (trim .Values.global.appEnv)) "production" -}}
+{{- if .Values.core.enabled -}}
+  {{- if and $production (not .Values.core.tls.enabled) (not .Values.core.allowInsecure) -}}
+    {{- fail "Production Core requires core.tls.enabled=true or explicit core.allowInsecure=true for a trusted plaintext hop" -}}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.web.enabled -}}
+  {{- if and .Values.web.csrf.existingSecret .Values.web.csrf.authKey -}}
+    {{- fail "Set either web.csrf.existingSecret or web.csrf.authKey, not both" -}}
+  {{- end -}}
+  {{- if and .Values.web.csrf.authKey (not (regexMatch "^[0-9a-fA-F]{64}$" .Values.web.csrf.authKey)) -}}
+    {{- fail "web.csrf.authKey must contain exactly 64 hexadecimal characters" -}}
+  {{- end -}}
+  {{- if and $production (not (or .Values.web.csrf.existingSecret .Values.web.csrf.authKey)) -}}
+    {{- fail "Production Web requires web.csrf.existingSecret or a persistent web.csrf.authKey" -}}
+  {{- end -}}
+  {{- if and $production (not .Values.web.coreGrpcTLS.enabled) (not .Values.web.coreAllowInsecure) -}}
+    {{- fail "Production Web requires web.coreGrpcTLS.enabled=true or explicit web.coreAllowInsecure=true for a trusted plaintext hop" -}}
+  {{- end -}}
+  {{- $skipVerify := eq (lower (toString .Values.web.coreGrpcTLS.insecureSkipVerify)) "true" -}}
+  {{- if and $production $skipVerify -}}
+    {{- fail "web.coreGrpcTLS.insecureSkipVerify=true is forbidden in production" -}}
+  {{- end -}}
+  {{- if and (not .Values.web.coreGrpcTLS.enabled) (or .Values.web.coreGrpcTLS.caSecret .Values.web.coreGrpcTLS.serverName $skipVerify) -}}
+    {{- fail "Web Core TLS settings require web.coreGrpcTLS.enabled=true" -}}
+  {{- end -}}
+  {{- if and (not .Values.core.enabled) (not .Values.web.coreGrpcAddr) -}}
+    {{- fail "web.coreGrpcAddr is required when core.enabled=false" -}}
+  {{- end -}}
+  {{- if and .Values.core.enabled (not .Values.web.coreGrpcAddr) (ne .Values.core.tls.enabled .Values.web.coreGrpcTLS.enabled) -}}
+    {{- fail "Core and Web TLS settings must match when Web connects directly to the chart's Core Service" -}}
+  {{- end -}}
+{{- end -}}

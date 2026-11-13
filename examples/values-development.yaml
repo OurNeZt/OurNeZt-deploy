@@ -1,0 +1,5 @@
+# Local HTTP only. Production must configure CSRF and verified Core transport.
+global:
+  appEnv: development
+web:
+  sessionCookieSecure: "false"
